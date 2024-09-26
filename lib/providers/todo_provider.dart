@@ -1,3 +1,4 @@
+import 'dart:math';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/todo.dart';
@@ -11,15 +12,23 @@ class TodoProvider extends _$TodoProvider {
 
   @override
   AsyncValue<List<Todo>> build() {
-    // fetchTodos();
-    return AsyncError(Exception("Simulated fetch error"),  StackTrace.fromString(''));
-    // return const AsyncValue.loading();
+    state = const AsyncValue.loading();
+    fetchTodos();
+    return state;
   }
 
   Future<void> fetchTodos() async {
     final user = ref.watch(userProviderProvider);
+    // print('api called');
     if (user != null) {
       try {
+        final random = Random();
+        bool hasError = random.nextBool();
+
+        if (hasError) {
+          throw Exception('Error Error run!');
+        }
+
         final snapshot = await _firestore
             .collection('users')
             .doc(user.uid)
@@ -27,13 +36,13 @@ class TodoProvider extends _$TodoProvider {
             .orderBy('order')
             .get();
 
-
         state = AsyncData(
           snapshot.docs
               .map((doc) => Todo.fromJson(doc.data()).copyWith(id: doc.id))
               .toList(),
         );
       } catch (e, stackTrace) {
+        print('coming here!');
         state = AsyncError(e, stackTrace);
       }
     } else {
@@ -41,18 +50,17 @@ class TodoProvider extends _$TodoProvider {
     }
   }
 
-Future<void> addTodo(Todo todo) async {
-  final user = ref.read(userProviderProvider);
-  if (user != null) {
-    await _firestore
-        .collection('users')
-        .doc(user.uid)
-        .collection('todos')
-        .add(todo.toJson());
-    await fetchTodos();
+  Future<void> addTodo(Todo todo) async {
+    final user = ref.read(userProviderProvider);
+    if (user != null) {
+      await _firestore
+          .collection('users')
+          .doc(user.uid)
+          .collection('todos')
+          .add(todo.toJson());
+      await fetchTodos();
+    }
   }
-}
-
 
   Future<void> deleteTodo(String id) async {
     final user = ref.read(userProviderProvider);
@@ -71,7 +79,6 @@ Future<void> addTodo(Todo todo) async {
     final user = ref.read(userProviderProvider);
     if (user != null) {
       final batch = _firestore.batch();
-      print(todos);
 
       for (final todo in todos) {
         final todoRef = _firestore

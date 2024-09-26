@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 
 part 'user_provider.g.dart';
 
+@Riverpod(keepAlive: true)
 @riverpod
 class UserProvider extends _$UserProvider {
   final FirebaseAuth _firebaseAuth = FirebaseAuth.instance;

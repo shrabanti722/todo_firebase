@@ -58,7 +58,7 @@ class TodoDetailScreen extends ConsumerWidget {
             Text('Error: $error'),
             TextButton(
               onPressed: () {
-                ref.read(todoProviderProvider.notifier).fetchTodos();
+                ref.invalidate(todoProviderProvider);
               },
               child: const Text('Retry'),
             ),

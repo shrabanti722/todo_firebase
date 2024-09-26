@@ -134,7 +134,7 @@ class _TodoListScreenState extends ConsumerState<TodoListScreen> {
               Text('Error: $error'),
               TextButton(
                 onPressed: () {
-                  ref.read(todoProviderProvider.notifier).fetchTodos();
+                  ref.invalidate(todoProviderProvider);
                 },
                 child: const Text('Retry'),
               ),
