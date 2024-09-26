@@ -23,6 +23,8 @@ mixin _$Todo {
   String? get id => throw _privateConstructorUsedError;
   String get title => throw _privateConstructorUsedError;
   String get description => throw _privateConstructorUsedError;
+  int get order => throw _privateConstructorUsedError;
+  bool get selected => throw _privateConstructorUsedError;
 
   /// Serializes this Todo to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
@@ -38,7 +40,8 @@ abstract class $TodoCopyWith<$Res> {
   factory $TodoCopyWith(Todo value, $Res Function(Todo) then) =
       _$TodoCopyWithImpl<$Res, Todo>;
   @useResult
-  $Res call({String? id, String title, String description});
+  $Res call(
+      {String? id, String title, String description, int order, bool selected});
 }
 
 /// @nodoc
@@ -59,6 +62,8 @@ class _$TodoCopyWithImpl<$Res, $Val extends Todo>
     Object? id = freezed,
     Object? title = null,
     Object? description = null,
+    Object? order = null,
+    Object? selected = null,
   }) {
     return _then(_value.copyWith(
       id: freezed == id
@@ -73,6 +78,14 @@ class _$TodoCopyWithImpl<$Res, $Val extends Todo>
           ? _value.description
           : description // ignore: cast_nullable_to_non_nullable
               as String,
+      order: null == order
+          ? _value.order
+          : order // ignore: cast_nullable_to_non_nullable
+              as int,
+      selected: null == selected
+          ? _value.selected
+          : selected // ignore: cast_nullable_to_non_nullable
+              as bool,
     ) as $Val);
   }
 }
@@ -84,7 +97,8 @@ abstract class _$$TodoImplCopyWith<$Res> implements $TodoCopyWith<$Res> {
       __$$TodoImplCopyWithImpl<$Res>;
   @override
   @useResult
-  $Res call({String? id, String title, String description});
+  $Res call(
+      {String? id, String title, String description, int order, bool selected});
 }
 
 /// @nodoc
@@ -102,6 +116,8 @@ class __$$TodoImplCopyWithImpl<$Res>
     Object? id = freezed,
     Object? title = null,
     Object? description = null,
+    Object? order = null,
+    Object? selected = null,
   }) {
     return _then(_$TodoImpl(
       id: freezed == id
@@ -116,6 +132,14 @@ class __$$TodoImplCopyWithImpl<$Res>
           ? _value.description
           : description // ignore: cast_nullable_to_non_nullable
               as String,
+      order: null == order
+          ? _value.order
+          : order // ignore: cast_nullable_to_non_nullable
+              as int,
+      selected: null == selected
+          ? _value.selected
+          : selected // ignore: cast_nullable_to_non_nullable
+              as bool,
     ));
   }
 }
@@ -124,7 +148,11 @@ class __$$TodoImplCopyWithImpl<$Res>
 @JsonSerializable()
 class _$TodoImpl implements _Todo {
   const _$TodoImpl(
-      {required this.id, required this.title, required this.description});
+      {required this.id,
+      required this.title,
+      required this.description,
+      required this.order,
+      this.selected = false});
 
   factory _$TodoImpl.fromJson(Map<String, dynamic> json) =>
       _$$TodoImplFromJson(json);
@@ -135,10 +163,15 @@ class _$TodoImpl implements _Todo {
   final String title;
   @override
   final String description;
+  @override
+  final int order;
+  @override
+  @JsonKey()
+  final bool selected;
 
   @override
   String toString() {
-    return 'Todo(id: $id, title: $title, description: $description)';
+    return 'Todo(id: $id, title: $title, description: $description, order: $order, selected: $selected)';
   }
 
   @override
@@ -149,12 +182,16 @@ class _$TodoImpl implements _Todo {
             (identical(other.id, id) || other.id == id) &&
             (identical(other.title, title) || other.title == title) &&
             (identical(other.description, description) ||
-                other.description == description));
+                other.description == description) &&
+            (identical(other.order, order) || other.order == order) &&
+            (identical(other.selected, selected) ||
+                other.selected == selected));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
-  int get hashCode => Object.hash(runtimeType, id, title, description);
+  int get hashCode =>
+      Object.hash(runtimeType, id, title, description, order, selected);
 
   /// Create a copy of Todo
   /// with the given fields replaced by the non-null parameter values.
@@ -176,7 +213,9 @@ abstract class _Todo implements Todo {
   const factory _Todo(
       {required final String? id,
       required final String title,
-      required final String description}) = _$TodoImpl;
+      required final String description,
+      required final int order,
+      final bool selected}) = _$TodoImpl;
 
   factory _Todo.fromJson(Map<String, dynamic> json) = _$TodoImpl.fromJson;
 
@@ -186,6 +225,10 @@ abstract class _Todo implements Todo {
   String get title;
   @override
   String get description;
+  @override
+  int get order;
+  @override
+  bool get selected;
 
   /// Create a copy of Todo
   /// with the given fields replaced by the non-null parameter values.

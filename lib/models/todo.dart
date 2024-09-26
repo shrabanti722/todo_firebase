@@ -9,6 +9,8 @@ class Todo with _$Todo {
     required String? id,
     required String title,
     required String description,
+    required int order,
+    @Default(false) bool selected,
   }) = _Todo;
 
   factory Todo.fromJson(Map<String, dynamic> json) => _$TodoFromJson(json);
