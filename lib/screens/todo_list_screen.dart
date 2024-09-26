@@ -18,9 +18,13 @@ class _TodoListScreenState extends ConsumerState<TodoListScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final todos = ref.watch(todoProviderProvider);
+    final todosState = ref.watch(todoProviderProvider);
     final user = ref.watch(userProviderProvider);
-    final selectedTodos = todos.where((todo) => todo.selected).toList();
+
+    final selectedTodos = todosState.maybeWhen(
+      data: (todos) => todos.where((todo) => todo.selected).toList().cast<Todo>(),
+      orElse: () => <Todo>[],
+    );
 
     if (user == null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -69,56 +73,74 @@ class _TodoListScreenState extends ConsumerState<TodoListScreen> {
           ),
         ],
       ),
-      body: ReorderableListView(
-        buildDefaultDragHandles: false,
-        onReorder: (oldIndex, newIndex) {
-          if (newIndex > oldIndex) newIndex -= 1;
-          ref.read(todoProviderProvider.notifier).moveTodo(oldIndex, newIndex);
-          final updatedTodos = ref.read(todoProviderProvider);
-          ref
-              .read(todoProviderProvider.notifier)
-              .updateTodosOrder(updatedTodos);
-        },
-        children: [
-          for (final todo in todos)
-            ListTile(
-              key: ValueKey(todo.id),
-               title: Text(todo.title, style: const TextStyle(color: Colors.white)),
-              leading: _isSelectionMode
-                  ? Checkbox(
-                      value: todo.selected,
-                      onChanged: (bool? value) {
-                        ref
-                            .read(todoProviderProvider.notifier)
-                            .toggleTodoSelection(todo);
-                      },
-                    )
-                  : null,
-              trailing: !_isSelectionMode
-                  ? ReorderableDragStartListener(
-                      index: todos.indexOf(todo),
-                      child: const Icon(Icons.drag_handle),
-                    )
-                  : null,
-              onLongPress: () {
-                setState(() {
-                  _isSelectionMode = true;
-                });
-                ref
-                    .read(todoProviderProvider.notifier)
-                    .toggleTodoSelection(todo);
-              },
-              onTap: () {
-                if (_isSelectionMode) {
+      body: todosState.when(
+        data: (todos) => ReorderableListView(
+          buildDefaultDragHandles: false,
+          onReorder: (oldIndex, newIndex) {
+            if (newIndex > oldIndex) newIndex -= 1;
+            ref.read(todoProviderProvider.notifier).moveTodo(oldIndex, newIndex);
+            final updatedTodos = ref.read(todoProviderProvider).maybeWhen(
+              data: (todos) => todos,
+              orElse: () => <Todo>[],
+            );
+            ref.read(todoProviderProvider.notifier).updateTodosOrder(updatedTodos);
+          },
+          children: [
+            for (final todo in todos)
+              ListTile(
+                key: ValueKey(todo.id),
+                title: Text(todo.title, style: const TextStyle(color: Colors.white)),
+                leading: _isSelectionMode
+                    ? Checkbox(
+                        value: todo.selected,
+                        onChanged: (bool? value) {
+                          ref
+                              .read(todoProviderProvider.notifier)
+                              .toggleTodoSelection(todo);
+                        },
+                      )
+                    : null,
+                trailing: !_isSelectionMode
+                    ? ReorderableDragStartListener(
+                        index: todos.indexOf(todo),
+                        child: const Icon(Icons.drag_handle),
+                      )
+                    : null,
+                onLongPress: () {
+                  setState(() {
+                    _isSelectionMode = true;
+                  });
                   ref
                       .read(todoProviderProvider.notifier)
                       .toggleTodoSelection(todo);
-                } else {
-                  context.push('/todo/${todo.id}');
-                }
-              },
-            ),
-        ],
+                },
+                onTap: () {
+                  if (_isSelectionMode) {
+                    ref
+                        .read(todoProviderProvider.notifier)
+                        .toggleTodoSelection(todo);
+                  } else {
+                    context.push('/todo/${todo.id}');
+                  }
+                },
+              ),
+          ],
+        ),
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (error, stack) => Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text('Error: $error'),
+              TextButton(
+                onPressed: () {
+                  ref.read(todoProviderProvider.notifier).fetchTodos();
+                },
+                child: const Text('Retry'),
+              ),
+            ],
+          ),
+        ),
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
@@ -129,56 +151,59 @@ class _TodoListScreenState extends ConsumerState<TodoListScreen> {
     );
   }
 
- void _showAddTodoBottomSheet(BuildContext context, WidgetRef ref) {
-  final titleController = TextEditingController();
-  final descriptionController = TextEditingController();
+  void _showAddTodoBottomSheet(BuildContext context, WidgetRef ref) {
+    final titleController = TextEditingController();
+    final descriptionController = TextEditingController();
 
-  showModalBottomSheet(
-    context: context,
-    builder: (context) {
-      return Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text('Add Todo', style: TextStyle(fontSize: 18)),
-            TextField(
-              controller: titleController,
-              decoration: const InputDecoration(labelText: 'New Todo'),
-            ),
-            TextField(
-              controller: descriptionController,
-              decoration: const InputDecoration(labelText: 'Add details'),
-            ),
-            const SizedBox(height: 16),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                TextButton(
-                  onPressed: () {
-                    Navigator.pop(context);
-                  },
-                  child: const Text('Cancel'),
-                ),
-                TextButton(
-                  onPressed: () {
-                    final newTodo = Todo(
-                      id: '',
-                      title: titleController.text,
-                      description: descriptionController.text,
-                      order: ref.read(todoProviderProvider).length,
-                    );
-                    ref.read(todoProviderProvider.notifier).addTodo(newTodo);
-                    Navigator.pop(context);
-                  },
-                  child: const Text('Add'),
-                ),
-              ],
-            ),
-          ],
-        ),
-      );
-    },
-  );
-}
+    showModalBottomSheet(
+      context: context,
+      builder: (context) {
+        return Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text('Add Todo', style: TextStyle(fontSize: 18)),
+              TextField(
+                controller: titleController,
+                decoration: const InputDecoration(labelText: 'New Todo'),
+              ),
+              TextField(
+                controller: descriptionController,
+                decoration: const InputDecoration(labelText: 'Add details'),
+              ),
+              const SizedBox(height: 16),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  TextButton(
+                    onPressed: () {
+                      context.pop();
+                    },
+                    child: const Text('Cancel'),
+                  ),
+                  TextButton(
+                    onPressed: () {
+                      final newTodo = Todo(
+                        id: '',
+                        title: titleController.text,
+                        description: descriptionController.text,
+                        order: ref.read(todoProviderProvider).maybeWhen(
+                          data: (todos) => todos.length,
+                          orElse: () => 0,
+                        ),
+                      );
+                      ref.read(todoProviderProvider.notifier).addTodo(newTodo);
+                      context.pop();
+                    },
+                    child: const Text('Add'),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
 }

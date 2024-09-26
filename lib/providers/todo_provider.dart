@@ -10,40 +10,49 @@ class TodoProvider extends _$TodoProvider {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   @override
-  List<Todo> build() {
-    fetchTodos();
-    return [];
+  AsyncValue<List<Todo>> build() {
+    // fetchTodos();
+    return AsyncError(Exception("Simulated fetch error"),  StackTrace.fromString(''));
+    // return const AsyncValue.loading();
   }
 
   Future<void> fetchTodos() async {
-    final user = ref.read(userProviderProvider);
+    final user = ref.watch(userProviderProvider);
     if (user != null) {
-      final snapshot = await _firestore
-          .collection('users')
-          .doc(user.uid)
-          .collection('todos')
-          .orderBy('order')
-          .get();
-      state = snapshot.docs
-          .map((doc) => Todo.fromJson(doc.data()).copyWith(id: doc.id))
-          .toList();
+      try {
+        final snapshot = await _firestore
+            .collection('users')
+            .doc(user.uid)
+            .collection('todos')
+            .orderBy('order')
+            .get();
+
+
+        state = AsyncData(
+          snapshot.docs
+              .map((doc) => Todo.fromJson(doc.data()).copyWith(id: doc.id))
+              .toList(),
+        );
+      } catch (e, stackTrace) {
+        state = AsyncError(e, stackTrace);
+      }
+    } else {
+      state = const AsyncData([]);
     }
   }
 
-  Future<void> addTodo(Todo todo) async {
-    final user = ref.read(userProviderProvider);
-    if (user != null) {
-      final todos = state;
-      final newOrder = todos.isEmpty ? 0 : todos.map((t) => t.order).reduce((a, b) => a > b ? a : b) + 1;
-
-      await _firestore
-          .collection('users')
-          .doc(user.uid)
-          .collection('todos')
-          .add(todo.copyWith(order: newOrder).toJson());
-      await fetchTodos();
-    }
+Future<void> addTodo(Todo todo) async {
+  final user = ref.read(userProviderProvider);
+  if (user != null) {
+    await _firestore
+        .collection('users')
+        .doc(user.uid)
+        .collection('todos')
+        .add(todo.toJson());
+    await fetchTodos();
   }
+}
+
 
   Future<void> deleteTodo(String id) async {
     final user = ref.read(userProviderProvider);
@@ -62,7 +71,6 @@ class TodoProvider extends _$TodoProvider {
     final user = ref.read(userProviderProvider);
     if (user != null) {
       final batch = _firestore.batch();
-
       print(todos);
 
       for (final todo in todos) {
@@ -79,45 +87,48 @@ class TodoProvider extends _$TodoProvider {
   }
 
   void moveTodo(int oldIndex, int newIndex) {
-  final todos = List.of(state);
-  var movedTodo = todos.removeAt(oldIndex);
-  movedTodo = movedTodo.copyWith(order: newIndex);  
-  todos.insert(newIndex, movedTodo);  
-  for (int i = 0; i < todos.length; i++) {
-    todos[i] = todos[i].copyWith(order: i);
-  }
-  state = todos;
-}
-
-Future<void> deleteSelectedTodos(List<Todo> selectedTodos) async {
-  final user = ref.read(userProviderProvider);
-  if (user != null && selectedTodos.isNotEmpty) {
-    final batch = _firestore.batch();
-
-    for (final todo in selectedTodos) {
-      final todoRef = _firestore
-          .collection('users')
-          .doc(user.uid)
-          .collection('todos')
-          .doc(todo.id);
-      batch.delete(todoRef);
+    final todos = List<Todo>.of(state.value ?? []);
+    var movedTodo = todos.removeAt(oldIndex);
+    movedTodo = movedTodo.copyWith(order: newIndex);
+    todos.insert(newIndex, movedTodo);
+    for (int i = 0; i < todos.length; i++) {
+      todos[i] = todos[i].copyWith(order: i);
     }
-
-    await batch.commit();
-    await fetchTodos();
+    state = AsyncData(todos);
   }
-}
 
-void toggleTodoSelection(Todo todo) {
-  final todos = List.of(state);
-  final index = todos.indexOf(todo);
-  if (index != -1) {
-    todos[index] = todos[index].copyWith(selected: !todos[index].selected);
-    state = todos;
+  Future<void> deleteSelectedTodos(List<Todo> selectedTodos) async {
+    final user = ref.read(userProviderProvider);
+    if (user != null && selectedTodos.isNotEmpty) {
+      final batch = _firestore.batch();
+
+      for (final todo in selectedTodos) {
+        final todoRef = _firestore
+            .collection('users')
+            .doc(user.uid)
+            .collection('todos')
+            .doc(todo.id);
+        batch.delete(todoRef);
+      }
+
+      await batch.commit();
+      await fetchTodos();
+    }
   }
-}
 
-void resetSelections() {
-  state = state.map((todo) => todo.copyWith(selected: false)).toList();
-}
+  void toggleTodoSelection(Todo todo) {
+    final todos = List<Todo>.of(state.value ?? []);
+    final index = todos.indexOf(todo);
+    if (index != -1) {
+      todos[index] = todos[index].copyWith(selected: !todos[index].selected);
+      state = AsyncData(todos);
+    }
+  }
+
+  void resetSelections() {
+    final todos = state.value ?? [];
+    state = AsyncData(
+      todos.map((todo) => todo.copyWith(selected: false)).toList(),
+    );
+  }
 }
