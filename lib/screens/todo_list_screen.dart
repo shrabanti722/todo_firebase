@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 import '../models/todo.dart';
 import '../providers/todo_provider.dart';
 import '../providers/user_provider.dart';
@@ -88,42 +89,42 @@ class _TodoListScreenState extends ConsumerState<TodoListScreen> {
           children: [
             for (final todo in todos)
               ListTile(
-                key: ValueKey(todo.id),
-                title: Text(todo.title, style: const TextStyle(color: Colors.white)),
-                leading: _isSelectionMode
-                    ? Checkbox(
-                        value: todo.selected,
-                        onChanged: (bool? value) {
-                          ref
-                              .read(todoProviderProvider.notifier)
-                              .toggleTodoSelection(todo);
-                        },
-                      )
-                    : null,
-                trailing: !_isSelectionMode
-                    ? ReorderableDragStartListener(
-                        index: todos.indexOf(todo),
-                        child: const Icon(Icons.drag_handle),
-                      )
-                    : null,
-                onLongPress: () {
-                  setState(() {
-                    _isSelectionMode = true;
-                  });
-                  ref
-                      .read(todoProviderProvider.notifier)
-                      .toggleTodoSelection(todo);
-                },
-                onTap: () {
-                  if (_isSelectionMode) {
-                    ref
-                        .read(todoProviderProvider.notifier)
-                        .toggleTodoSelection(todo);
-                  } else {
-                    context.push('/todo/${todo.id}');
-                  }
-                },
-              ),
+  key: ValueKey(todo.id),
+  title: Text(todo.title, style: const TextStyle(color: Colors.white)),
+  subtitle: todo.dueDate != null
+      ? Text(
+          DateFormat('EEE, dd MMM \'at\' hh:mm a').format(todo.dueDate!),
+          style: const TextStyle(color: Colors.grey),
+        )
+      : null,
+  leading: _isSelectionMode
+      ? Checkbox(
+          value: todo.selected,
+          onChanged: (bool? value) {
+            ref.read(todoProviderProvider.notifier).toggleTodoSelection(todo);
+          },
+        )
+      : null,
+  trailing: !_isSelectionMode
+      ? ReorderableDragStartListener(
+          index: todos.indexOf(todo),
+          child: const Icon(Icons.drag_handle),
+        )
+      : null,
+  onLongPress: () {
+    setState(() {
+      _isSelectionMode = true;
+    });
+    ref.read(todoProviderProvider.notifier).toggleTodoSelection(todo);
+  },
+  onTap: () {
+    if (_isSelectionMode) {
+      ref.read(todoProviderProvider.notifier).toggleTodoSelection(todo);
+    } else {
+      context.push('/todo/${todo.id}');
+    }
+  },
+),
           ],
         ),
         loading: () => const Center(child: CircularProgressIndicator()),
@@ -150,60 +151,96 @@ class _TodoListScreenState extends ConsumerState<TodoListScreen> {
       ),
     );
   }
+void _showAddTodoBottomSheet(BuildContext context, WidgetRef ref) {
+  final titleController = TextEditingController();
+  final descriptionController = TextEditingController();
 
-  void _showAddTodoBottomSheet(BuildContext context, WidgetRef ref) {
-    final titleController = TextEditingController();
-    final descriptionController = TextEditingController();
+  showModalBottomSheet(
+    context: context,
+    builder: (context) {
+      DateTime? selectedDate;
 
-    showModalBottomSheet(
-      context: context,
-      builder: (context) {
-        return Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text('Add Todo', style: TextStyle(fontSize: 18)),
-              TextField(
-                controller: titleController,
-                decoration: const InputDecoration(labelText: 'New Todo'),
-              ),
-              TextField(
-                controller: descriptionController,
-                decoration: const InputDecoration(labelText: 'Add details'),
-              ),
-              const SizedBox(height: 16),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  TextButton(
-                    onPressed: () {
-                      context.pop();
-                    },
-                    child: const Text('Cancel'),
-                  ),
-                  TextButton(
-                    onPressed: () {
-                      final newTodo = Todo(
-                        id: '',
-                        title: titleController.text,
-                        description: descriptionController.text,
-                        order: ref.read(todoProviderProvider).maybeWhen(
-                          data: (todos) => todos.length,
-                          orElse: () => 0,
-                        ),
+      return StatefulBuilder(
+        builder: (BuildContext context, StateSetter setModalState) {
+          return Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text('Add Todo', style: TextStyle(fontSize: 18)),
+                TextField(
+                  controller: titleController,
+                  decoration: const InputDecoration(labelText: 'New Todo'),
+                ),
+                TextField(
+                  controller: descriptionController,
+                  decoration: const InputDecoration(labelText: 'Add details'),
+                ),
+                const SizedBox(height: 16),
+                TextButton(
+                  onPressed: () async {
+                    DateTime? date = await showDatePicker(
+                      context: context,
+                      initialDate: DateTime.now(),
+                      firstDate: DateTime(2000),
+                      lastDate: DateTime(2100),
+                    );
+                    if (!context.mounted) return;
+                    if (date != null) {
+                      TimeOfDay? time = await showTimePicker(
+                        context: context,
+                        initialTime: TimeOfDay.now(),
                       );
-                      ref.read(todoProviderProvider.notifier).addTodo(newTodo);
-                      context.pop();
-                    },
-                    child: const Text('Add'),
+                      if (time != null) {
+                        selectedDate = DateTime(date.year, date.month, date.day, time.hour, time.minute);
+                        setModalState(() {});
+                      }
+                    }
+                  },
+                  child: const Text('Select Due Date'),
+                ),
+                if (selectedDate != null)
+                  Text(
+                    'Selected: ${DateFormat('EEE, dd MMM \'at\' hh:mm a').format(selectedDate!)}',
+                    style: const TextStyle(fontSize: 16, color: Colors.blue),
                   ),
-                ],
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
+                const SizedBox(height: 16),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    TextButton(
+                      onPressed: () {
+                        context.pop();
+                      },
+                      child: const Text('Cancel'),
+                    ),
+                    TextButton(
+                      onPressed: () {
+                        final newTodo = Todo(
+                          id: '',
+                          title: titleController.text,
+                          description: descriptionController.text,
+                          order: ref.read(todoProviderProvider).maybeWhen(
+                            data: (todos) => todos.length,
+                            orElse: () => 0,
+                          ),
+                          dueDate: selectedDate,
+                        );
+                        ref.read(todoProviderProvider.notifier).addTodo(newTodo);
+                        context.pop();
+                      },
+                      child: const Text('Add'),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          );
+        },
+      );
+    },
+  );
+}
+
+
 }
