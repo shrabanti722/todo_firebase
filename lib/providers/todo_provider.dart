@@ -1,7 +1,9 @@
 import 'dart:async';
+import 'dart:math';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:todo/providers/date_provider.dart';
 import '../models/todo.dart';
 import 'user_provider.dart';
 
@@ -10,55 +12,30 @@ part 'todo_provider.g.dart';
 @riverpod
 class TodoProvider extends _$TodoProvider {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  DateTime? _nextMidnight;
   // Timer? _timer;
 
   @override
-  AsyncValue<List<Todo>> build() {
-    state = const AsyncValue.loading();
-    fetchTodos();
-    _startMidnightCheckTimer();
-    return state;
+  Future<List<Todo>> build() async {
+    final currentDate = ref.watch(dateProvider);
+    final list = await fetchTodos();
+    return list;
   }
 
-  //  @override
-  // AsyncValue<List<Todo>> build() {
-  //   state = const AsyncValue.loading();
-
-  //   ref.listen<User?>(userProviderProvider, (previous, user) async {
-  //     if (user == null) {
-  //       state = const AsyncData([]);
-  //       return;
-  //     } 
-  //       await fetchTodos();
-  //   });
-  //   _startMidnightCheckTimer();
-  //   return state;
-  // }
-
-  void _startMidnightCheckTimer() {
-    Timer.periodic(const Duration(minutes: 5), (_) {
-      _checkMidnight();
-    });
-  }
-
-  void _checkMidnight() {
-    final now = DateTime.now();
-    final midnight = DateTime(now.year, now.month, now.day + 1);
-
-    if (now.isAfter(midnight)) {
-      ref.invalidate(todoProviderProvider);
-    }
-  }
-
-  Future<void> fetchTodos() async {
+  Future<List<Todo>> fetchTodos() async {
     final user = ref.watch(userProviderProvider);
     if (user != null) {
       try {
-        final Timestamp now = Timestamp.fromDate(DateTime.now());
+        final random = Random();
+        bool hasError = random.nextBool();
+        if (hasError) {
+          throw Exception('Error Error run!');
+        }
+        // final Timestamp now = Timestamp.fromDate(DateTime.now());
 
-        final Timestamp yesterday = Timestamp.fromDate(
-          DateTime.now().subtract(const Duration(days: 1)),
-        );
+        // final Timestamp yesterday = Timestamp.fromDate(
+        //   DateTime.now().subtract(const Duration(days: 1)),
+        // );
 
         final snapshot = await _firestore
             .collection('users')
@@ -68,16 +45,15 @@ class TodoProvider extends _$TodoProvider {
             .orderBy('order')
             .get();
 
-        state = AsyncData(
-          snapshot.docs
-              .map((doc) => Todo.fromJson(doc.data()).copyWith(id: doc.id))
-              .toList(),
-        );
+        return snapshot.docs
+            .map((doc) => Todo.fromJson(doc.data()).copyWith(id: doc.id))
+            .toList();
       } catch (e, stackTrace) {
-        state = AsyncError(e, stackTrace);
+        print('coming here!');
+        throw AsyncError(e, stackTrace);
       }
     } else {
-      state = const AsyncData([]);
+      return [];
     }
   }
 
