@@ -25,7 +25,7 @@ mixin _$Todo {
   String get description => throw _privateConstructorUsedError;
   int get order => throw _privateConstructorUsedError;
   bool get selected => throw _privateConstructorUsedError;
-  DateTime? get dueDate => throw _privateConstructorUsedError;
+  DateTime? get date => throw _privateConstructorUsedError;
 
   /// Serializes this Todo to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
@@ -47,7 +47,7 @@ abstract class $TodoCopyWith<$Res> {
       String description,
       int order,
       bool selected,
-      DateTime? dueDate});
+      DateTime? date});
 }
 
 /// @nodoc
@@ -70,7 +70,7 @@ class _$TodoCopyWithImpl<$Res, $Val extends Todo>
     Object? description = null,
     Object? order = null,
     Object? selected = null,
-    Object? dueDate = freezed,
+    Object? date = freezed,
   }) {
     return _then(_value.copyWith(
       id: freezed == id
@@ -93,9 +93,9 @@ class _$TodoCopyWithImpl<$Res, $Val extends Todo>
           ? _value.selected
           : selected // ignore: cast_nullable_to_non_nullable
               as bool,
-      dueDate: freezed == dueDate
-          ? _value.dueDate
-          : dueDate // ignore: cast_nullable_to_non_nullable
+      date: freezed == date
+          ? _value.date
+          : date // ignore: cast_nullable_to_non_nullable
               as DateTime?,
     ) as $Val);
   }
@@ -114,7 +114,7 @@ abstract class _$$TodoImplCopyWith<$Res> implements $TodoCopyWith<$Res> {
       String description,
       int order,
       bool selected,
-      DateTime? dueDate});
+      DateTime? date});
 }
 
 /// @nodoc
@@ -134,7 +134,7 @@ class __$$TodoImplCopyWithImpl<$Res>
     Object? description = null,
     Object? order = null,
     Object? selected = null,
-    Object? dueDate = freezed,
+    Object? date = freezed,
   }) {
     return _then(_$TodoImpl(
       id: freezed == id
@@ -157,9 +157,9 @@ class __$$TodoImplCopyWithImpl<$Res>
           ? _value.selected
           : selected // ignore: cast_nullable_to_non_nullable
               as bool,
-      dueDate: freezed == dueDate
-          ? _value.dueDate
-          : dueDate // ignore: cast_nullable_to_non_nullable
+      date: freezed == date
+          ? _value.date
+          : date // ignore: cast_nullable_to_non_nullable
               as DateTime?,
     ));
   }
@@ -174,7 +174,7 @@ class _$TodoImpl implements _Todo {
       required this.description,
       required this.order,
       this.selected = false,
-      this.dueDate});
+      this.date});
 
   factory _$TodoImpl.fromJson(Map<String, dynamic> json) =>
       _$$TodoImplFromJson(json);
@@ -191,11 +191,11 @@ class _$TodoImpl implements _Todo {
   @JsonKey()
   final bool selected;
   @override
-  final DateTime? dueDate;
+  final DateTime? date;
 
   @override
   String toString() {
-    return 'Todo(id: $id, title: $title, description: $description, order: $order, selected: $selected, dueDate: $dueDate)';
+    return 'Todo(id: $id, title: $title, description: $description, order: $order, selected: $selected, date: $date)';
   }
 
   @override
@@ -210,13 +210,13 @@ class _$TodoImpl implements _Todo {
             (identical(other.order, order) || other.order == order) &&
             (identical(other.selected, selected) ||
                 other.selected == selected) &&
-            (identical(other.dueDate, dueDate) || other.dueDate == dueDate));
+            (identical(other.date, date) || other.date == date));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
-  int get hashCode => Object.hash(
-      runtimeType, id, title, description, order, selected, dueDate);
+  int get hashCode =>
+      Object.hash(runtimeType, id, title, description, order, selected, date);
 
   /// Create a copy of Todo
   /// with the given fields replaced by the non-null parameter values.
@@ -241,7 +241,7 @@ abstract class _Todo implements Todo {
       required final String description,
       required final int order,
       final bool selected,
-      final DateTime? dueDate}) = _$TodoImpl;
+      final DateTime? date}) = _$TodoImpl;
 
   factory _Todo.fromJson(Map<String, dynamic> json) = _$TodoImpl.fromJson;
 
@@ -256,7 +256,7 @@ abstract class _Todo implements Todo {
   @override
   bool get selected;
   @override
-  DateTime? get dueDate;
+  DateTime? get date;
 
   /// Create a copy of Todo
   /// with the given fields replaced by the non-null parameter values.

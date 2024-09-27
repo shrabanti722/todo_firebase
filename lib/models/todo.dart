@@ -11,7 +11,7 @@ class Todo with _$Todo {
     required String description,
     required int order,
     @Default(false) bool selected,
-    DateTime? dueDate, // New field for due date and time
+    DateTime? date,
   }) = _Todo;
 
   factory Todo.fromJson(Map<String, dynamic> json) => _$TodoFromJson(json);

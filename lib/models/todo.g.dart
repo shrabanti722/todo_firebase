@@ -12,9 +12,8 @@ _$TodoImpl _$$TodoImplFromJson(Map<String, dynamic> json) => _$TodoImpl(
       description: json['description'] as String,
       order: (json['order'] as num).toInt(),
       selected: json['selected'] as bool? ?? false,
-      dueDate: json['dueDate'] == null
-          ? null
-          : DateTime.parse(json['dueDate'] as String),
+      date:
+          json['date'] == null ? null : DateTime.parse(json['date'] as String),
     );
 
 Map<String, dynamic> _$$TodoImplToJson(_$TodoImpl instance) =>
@@ -24,5 +23,5 @@ Map<String, dynamic> _$$TodoImplToJson(_$TodoImpl instance) =>
       'description': instance.description,
       'order': instance.order,
       'selected': instance.selected,
-      'dueDate': instance.dueDate?.toIso8601String(),
+      'date': instance.date?.toIso8601String(),
     };

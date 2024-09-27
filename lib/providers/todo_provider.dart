@@ -1,4 +1,5 @@
-import 'dart:math';
+import 'dart:async';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/todo.dart';
@@ -9,30 +10,61 @@ part 'todo_provider.g.dart';
 @riverpod
 class TodoProvider extends _$TodoProvider {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  // Timer? _timer;
 
   @override
   AsyncValue<List<Todo>> build() {
     state = const AsyncValue.loading();
     fetchTodos();
+    _startMidnightCheckTimer();
     return state;
+  }
+
+  //  @override
+  // AsyncValue<List<Todo>> build() {
+  //   state = const AsyncValue.loading();
+
+  //   ref.listen<User?>(userProviderProvider, (previous, user) async {
+  //     if (user == null) {
+  //       state = const AsyncData([]);
+  //       return;
+  //     } 
+  //       await fetchTodos();
+  //   });
+  //   _startMidnightCheckTimer();
+  //   return state;
+  // }
+
+  void _startMidnightCheckTimer() {
+    Timer.periodic(const Duration(minutes: 5), (_) {
+      _checkMidnight();
+    });
+  }
+
+  void _checkMidnight() {
+    final now = DateTime.now();
+    final midnight = DateTime(now.year, now.month, now.day + 1);
+
+    if (now.isAfter(midnight)) {
+      ref.invalidate(todoProviderProvider);
+    }
   }
 
   Future<void> fetchTodos() async {
     final user = ref.watch(userProviderProvider);
-    // print('api called');
     if (user != null) {
       try {
-        final random = Random();
-        bool hasError = random.nextBool();
+        final Timestamp now = Timestamp.fromDate(DateTime.now());
 
-        if (hasError) {
-          throw Exception('Error Error run!');
-        }
+        final Timestamp yesterday = Timestamp.fromDate(
+          DateTime.now().subtract(const Duration(days: 1)),
+        );
 
         final snapshot = await _firestore
             .collection('users')
             .doc(user.uid)
             .collection('todos')
+            // .where('date', isLessThan: now, isGreaterThan: yesterday)
             .orderBy('order')
             .get();
 
@@ -42,7 +74,6 @@ class TodoProvider extends _$TodoProvider {
               .toList(),
         );
       } catch (e, stackTrace) {
-        print('coming here!');
         state = AsyncError(e, stackTrace);
       }
     } else {
