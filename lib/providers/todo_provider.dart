@@ -12,12 +12,10 @@ part 'todo_provider.g.dart';
 @riverpod
 class TodoProvider extends _$TodoProvider {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  DateTime? _nextMidnight;
-  // Timer? _timer;
 
   @override
   Future<List<Todo>> build() async {
-    final currentDate = ref.watch(dateProvider);
+    ref.watch(dateProvider);
     final list = await fetchTodos();
     return list;
   }
